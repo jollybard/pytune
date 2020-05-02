@@ -7,6 +7,9 @@
 #               i/n <= gen/per <=  a/b
 # (that is, bi - an = 1); that means they're neighbors
 # in the scale tree.
+#
+# TODO: Make a scale object!
+
 from collections import Counter
 from math import log
 from itertools import combinations
@@ -18,14 +21,46 @@ def mod(x,p):
     else:
         return x % p
 
-def edo(n,m):
-    return n * (1200/m)
+def edo(n, m=None):
+    if m is not None:
+        return round(n * (1200/m),10)
+    else:
+        return [edo(i,n) for i in range(1,n+1)]
 
 def fromJI(q):
     return round(1200 * log(q,2),3)
 
 def fromJIscale(s):
     return [fromJI(x) for x in s]
+
+def approxIn(s1, s2, offset = None):
+    #approximate s1 in s2
+    if offset is not None:
+        if s1[-1] != s2[-1]:
+            print("The two scales must have the same period.")
+            return -1
+        p = s1[-1]
+        j = 0
+        best = s2[0]
+        out = []
+        for note in sorted([mod(x + offset,p) for x in s1[:-1]]):
+            for (k,x) in enumerate(s2[j+1:]):
+                if abs(note - x) % p > abs(note - best) % p:
+                    out.append(best)
+                    j += k
+                    break
+                best = x
+        out.append(p)
+        return out
+    else:
+        return approxIn(s1,s2,0)
+
+def rotate(s,i):
+    p = s[-1]
+    c = s[(i-1) % len(s)]
+    scale = [round(mod(x - c, p),3) for x in s]
+    scale.sort()
+    return scale
 
 # MOS scales
 
@@ -66,6 +101,11 @@ def intervalTable(s):
     n = len(s)
     l = [intervalList(s,j) for j in range(n)]
     return l
+
+def maxVariety(s):
+    l = [set(x) for x in intervalTable(s)]
+    l = [len(x) for x in l]
+    return max(l)
 
 def isNMOS(s,k):
     n = len(s)
